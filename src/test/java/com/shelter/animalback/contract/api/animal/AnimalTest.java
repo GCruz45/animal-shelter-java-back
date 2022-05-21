@@ -8,11 +8,19 @@ import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
 import au.com.dius.pact.provider.junitsupport.loader.PactBrokerAuth;
 import au.com.dius.pact.provider.spring.junit5.MockMvcTestTarget;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import com.shelter.animalback.controller.AnimalController;
+import com.shelter.animalback.controller.dto.AnimalDto;
 import com.shelter.animalback.domain.Animal;
+import com.shelter.animalback.model.AnimalDao;
+import com.shelter.animalback.repository.AnimalRepository;
 import com.shelter.animalback.service.interfaces.AnimalService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +30,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @PactBroker(url = "${PACT_BROKER_BASE_URL}", authentication = @PactBrokerAuth(token = "${PACT_BROKER_TOKEN}"))
 @Provider("AnimalShelterBack")
@@ -32,6 +41,8 @@ public class AnimalTest {
     private AnimalService animalService;
     @InjectMocks
     private AnimalController animalController;
+    @Autowired
+    private AnimalRepository repository;
 
     @TestTemplate
     @ExtendWith(PactVerificationInvocationContextProvider.class)
@@ -76,23 +87,49 @@ public class AnimalTest {
         animal.setBreed("addedAnimalBreed");
         animal.setGender("Female");
         animal.setVaccinated(false);
-        Mockito.when(animalService.save(animal)).thenReturn(animal);
+        Mockito.lenient().when(animalService.save(any(Animal.class)))
+                .thenReturn(animal);
     }
 
-    @State("updates the animal with name = animalToUpdate")
+    @State("updates the animal with name = Manchas")
     public void updateAnimal() {
         Animal animal = new Animal();
-        animal.setName("animalToUpdate");
-        animal.setBreed("animalToUpdateBreed");
-        animal.setGender("Male");
+        animal.setId(1);
+        animal.setName("manchas");
+        animal.setBreed("Bengali");
+        animal.setGender("Female");
         animal.setVaccinated(true);
-        Mockito.when(animalService
-                .replace("animalToUpdate", animal))
+        String[] vaccines = { "lupus", "rabia" };
+        animal.setVaccines(vaccines);
+        Mockito.when(animalService.replace(eq("manchas"), any(Animal.class)))
                 .thenReturn(animal);
     }
 
     @State("deletes animal with name = Bigotes")
     public void deleteAnimalByName() {
-        // Mockito.when(animalService.delete("bigotes")).thenReturn(Void);
+        Mockito.doNothing().when(animalService).delete("bigotes");
+    }
+
+    private Animal map(AnimalDao dao) {
+        var vaccinesDao = dao.getVaccines();
+
+        var vaccines = vaccinesDao == null ? new String[0]
+                : vaccinesDao.stream().map(vaccineDao -> vaccineDao.getName()).toArray(size -> new String[size]);
+
+        return new Animal(
+                dao.getId(),
+                dao.getName(),
+                dao.getBreed(),
+                dao.getGender(),
+                dao.isVaccinated(),
+                vaccines);
+    }
+
+    private AnimalDao map(Animal animal) {
+        return new AnimalDao(
+                animal.getName(),
+                animal.getBreed(),
+                animal.getGender(),
+                animal.isVaccinated());
     }
 }

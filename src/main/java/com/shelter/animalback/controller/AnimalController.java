@@ -35,7 +35,8 @@ public class AnimalController {
 
             return ResponseEntity.status(HttpStatus.OK).body(map(animal));
         } catch (AnimalNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("The animal called %s does not exists", name));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(String.format("The animal called %s does not exists", name));
         }
     }
 
@@ -45,7 +46,8 @@ public class AnimalController {
             animalService.delete(name);
             return ResponseEntity.noContent().build();
         } catch (AnimalNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("The animal called %s does not exists", name));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(String.format("The animal called %s does not exists", name));
         }
     }
 
@@ -54,9 +56,9 @@ public class AnimalController {
         try {
             var animal = animalService.save(map(animalDto));
             return new ResponseEntity<AnimalDto>(map(animal), HttpStatus.CREATED);
-
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(String.format("The animal called %s has already been created", animalDto.getName()));
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(String.format("The animal called %s has already been created", animalDto.getName()));
         }
     }
 
